@@ -1,38 +1,100 @@
 const fs = require("fs");
 const path = require("path");
 
-// 1. Configuration
-const DATA_FILE = path.join(__dirname, "../data.json"); // Adjust path as needed
+// Configuration
+const PROCESSED_DATA_FILE = path.join(__dirname, "../processed-data.json");
 const README_FILE = path.join(__dirname, "../README.md");
 
+/**
+ * Format numbers with commas (e.g., 1000 -> 1,000)
+ */
+function formatNumber(num) {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+/**
+ * Create badge markdown
+ */
+function createBadge(label, value, color = "blue") {
+  return `![${label}](https://img.shields.io/badge/${label}-${encodeURIComponent(
+    value
+  )}-${color})`;
+}
+
 try {
-  // 2. Read the JSON data
-  const data = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+  console.log("🚀 Starting README update from enriched data...\n");
 
-  // 3. Create the Markdown Table header
-  let markdownTable = "| ID | Name | Link |\n| --- | --- | --- |\n";
+  // Read the enriched data
+  const data = JSON.parse(fs.readFileSync(PROCESSED_DATA_FILE, "utf8"));
+  const projects = data.projects;
 
-  // 4. Populate rows
-  data.forEach((item) => {
-    // We use standard Markdown link syntax: [Label](URL)
-    markdownTable += `| ${item.id} | **${item.name}** | [View Repo](${item.link}) |\n`;
+  console.log(`📊 Processing ${projects.length} enriched projects\n`);
+
+  // Create the enhanced Markdown Table
+  let markdownTable = `| # | Project | Description | Stars | Issues | Language | Last Updated |\n`;
+  markdownTable += `| --- | --- | --- | --- | --- | --- | --- |\n`;
+
+  // Populate rows with enriched data
+  projects.forEach((item, index) => {
+    const stars = formatNumber(item.stars || 0);
+    const issues = item.openIssues || 0;
+    const language = item.language || "N/A";
+    const lastUpdated = item.lastUpdated || "N/A";
+
+    // Truncate description to avoid overly wide tables
+    const description =
+      item.description && item.description !== "No description"
+        ? item.description.substring(0, 80) +
+          (item.description.length > 80 ? "..." : "")
+        : "No description";
+
+    // Create star badge
+    const starBadge = `⭐ ${stars}`;
+    const issueBadge = issues > 0 ? `🐛 ${issues}` : "✅ 0";
+
+    markdownTable += `| ${index + 1} | **[${item.name}](${
+      item.link
+    })** | ${description} | ${starBadge} | ${issueBadge} | \`${language}\` | ${lastUpdated} |\n`;
   });
 
-  // 5. Read the existing README
+  // Add summary statistics
+  const totalStars = projects.reduce((sum, p) => sum + (p.stars || 0), 0);
+  const totalIssues = projects.reduce((sum, p) => sum + (p.openIssues || 0), 0);
+  const languages = [
+    ...new Set(projects.map((p) => p.language).filter(Boolean)),
+  ];
+
+  const summarySection = `
+### 📊 Summary Statistics
+
+- **Total Projects:** ${projects.length}
+- **Total Stars:** ⭐ ${formatNumber(totalStars)}
+- **Open Issues:** 🐛 ${formatNumber(totalIssues)}
+- **Languages Used:** ${languages.join(", ")}
+- **Last Updated:** ${new Date(data.generatedAt).toLocaleDateString()}
+
+---
+
+`;
+
+  // Read the existing README
   let readmeContent = fs.readFileSync(README_FILE, "utf8");
 
-  // 6. Replace the content between the markers
-  const startMarker = "";
-  const endMarker = "";
+  // Replace the content between the markers
+  const startMarker = "<!-- AUTO-GENERATED-CONTENT:START -->";
+  const endMarker = "<!-- AUTO-GENERATED-CONTENT:END -->";
 
   const regex = new RegExp(`${startMarker}[\\s\\S]*${endMarker}`);
-  const newContent = `${startMarker}\n\n${markdownTable}\n${endMarker}`;
+  const newContent = `${startMarker}\n${summarySection}\n${markdownTable}\n${endMarker}`;
 
   const updatedReadme = readmeContent.replace(regex, newContent);
 
-  // 7. Write the file back
+  // Write the file back
   fs.writeFileSync(README_FILE, updatedReadme);
-  console.log("✅ Success: README.md updated from JSON data!");
+  console.log("✅ Success: README.md updated with enriched data!");
+  console.log(
+    `📈 Total stars across all projects: ${formatNumber(totalStars)}`
+  );
 } catch (error) {
   console.error("❌ Error updating README:", error.message);
   process.exit(1);

@@ -1,19 +1,21 @@
-name: Sync Data to README
+name: Sync and Enrich Project Data
 
 on:
   push:
     branches:
       - main
     paths:
-      - "data.json" # Runs only if data.json changes
-      - "scripts/**" # Or if you update the script itself
-  workflow_dispatch: # Allows you to run it manually from the "Actions" tab
+      - "data.json" # Runs when data.json changes
+      - "scripts/**" # Or when scripts are updated
+  workflow_dispatch: # Manual trigger
+  schedule:
+    # Optional: Run weekly to keep data fresh (every Monday at 00:00 UTC)
+    - cron: "0 0 * * 1"
 
 jobs:
-  update-readme:
+  enrich-and-update:
     runs-on: ubuntu-latest
 
-    # Permissions needed to commit changes back to the repo
     permissions:
       contents: write
 
@@ -26,13 +28,24 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Run Sync Script
+      - name: Enrich Data from GitHub API
+        run: node scripts/enrich-data.js
+
+      - name: Update README with Enriched Data
         run: node scripts/sync-readme.js
 
       - name: Commit and Push Changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add README.md
-          # Only commit if there are actually changes to avoid errors
-          git diff --quiet && git diff --staged --quiet || (git commit -m "docs: auto-update readme table" && git push)
+          git add processed-data.json README.md
+          # Only commit if there are changes
+          git diff --quiet && git diff --staged --quiet || (git commit -m "docs: auto-update with enriched project data" && git push)
+
+      - name: Create Summary
+        run: |
+          echo "### ✅ Data Enrichment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Enriched data saved to \`processed-data.json\`" >> $GITHUB_STEP_SUMMARY
+          echo "- README.md updated with latest statistics" >> $GITHUB_STEP_SUMMARY
+          echo "- Check the [Actions tab](https://github.com/${{ github.repository }}/actions) for details" >> $GITHUB_STEP_SUMMARY
