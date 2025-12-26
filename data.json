@@ -8,5 +8,10 @@
     "id": 2,
     "name": "Solana Kit",
     "link": "https://github.com/anza-xyz/kit"
+  },
+  {
+    "id": 3,
+    "name": "Codama IDL",
+    "link": "https://github.com/codama-idl/codama"
   }
 ]
