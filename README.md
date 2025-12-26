@@ -1,2 +1,4 @@
-# oss-projects
-List of Open Source Projects Where Developers can Contribute Back to the Ecosystem
+| ID  | Name              | Link                                                           |
+| --- | ----------------- | -------------------------------------------------------------- |
+| 1   | **Connector Kit** | [View Repo](https://github.com/solana-foundation/connectorkit) |
+| 2   | **Solana Kit**    | [View Repo](https://github.com/anza-xyz/kit)                   |

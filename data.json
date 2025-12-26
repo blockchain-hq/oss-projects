@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "name": "Connector Kit",
+    "link": "https://github.com/solana-foundation/connectorkit"
+  },
+  {
+    "id": 2,
+    "name": "Solana Kit",
+    "link": "https://github.com/anza-xyz/kit"
+  }
+]
